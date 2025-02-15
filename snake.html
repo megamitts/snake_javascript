@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Snake!</title>
+</head>
+<body>
+
+
+<canvas id="canvas" width="400" height="400"></canvas>
+
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script> <!-- include latest version of jquery -->
+<script>
+
+// define the variables "canvas" and "ctx" - the playing area
+
+var canvas = document.getElementById("canvas");
+var ctx = canvas.getContext("2d");
+
+// define the width and height of the playing area
+
+var width = canvas.width;
+var height = canvas.height;
+
+var snake_Color = "#ff0000";
+
+var gameRunning = true;
+
+// create variables to make 10x10 pixel blocks that will go on the canvas but be invisible
+
+var blockSize = 10;
+var widthInBlocks = width/blockSize;   // width will be forty blocks wide
+var heightInBlocks = height/blockSize; // height will be forty blocks tall
+
+// define the score variable
+
+var score = 0;
+var highscore = 0;
+
+// create a function to draw a border around the playfield.
+
+var drawBorder = function () {
+	ctx.fillStyle = "Gray"; // colour of the border
+	ctx.fillRect(0, 0, width, blockSize); // top edge
+	ctx.fillRect(0, height - blockSize, width, blockSize); // bottom edge
+	ctx.fillRect(0, 0, blockSize, height); // left edge
+	ctx.fillRect(width-blockSize, 0, blockSize, height); // right edge
+};
+
+// create a function to display the score.
+
+var drawScore = function () {
+	ctx.font = "20px Courier"; // font and size
+	ctx.fillStyle = "Black"; // colour of font
+	ctx.textAlign = "left"; // align text to the left
+	ctx.textBaseline = "top"; // where to start drawing the font from
+	ctx.fillText("Score: " + score, blockSize, blockSize); //  put the score at 10,10
+};
+
+var drawHighScore = function () {
+	ctx.font = "20px Courier"; // font and size
+	ctx.fillStyle = "Black"; // colour of font
+	ctx.textAlign = "left"; // align text to the left
+	ctx.textBaseline = "top"; // where to start drawing the font from
+	ctx.fillText("High Score: " + highscore, 180, 10); //  put the score at 10,10
+};
+
+// create a Game Over function.
+
+var gameOver = function () {
+	gameRunning = false;
+
+	if (score > highscore) {
+		highscore = score;
+	}
+
+	drawScore();
+    snake.draw();
+    apple.draw();
+    drawBorder();
+
+	ctx.font = "60px Courier";
+	ctx.fillStyle = "Black";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.fillText("Game Over", width / 2, height / 2); // place in middle of playfield	
+	ctx.font = "20px Courier";
+    ctx.fillText("Press Space to Restart", width / 2, height / 2 + 40);
+	
+	
+};
+
+ // Draw a circle function 
+ 
+  var circle = function (x, y, radius, fillCircle) {
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2, false);
+    if (fillCircle) {
+      ctx.fill();
+    } else {
+      ctx.stroke();
+    }
+  };
+
+
+// block constructor to create the blocks that will be used to fill the playfield.
+
+var Block = function (col,row) {
+	this.col = col;
+	this.row = row;
+};
+
+/* drawSquare function/method that will be part of the Block 
+   constructor to draw the snake blocks */
+
+Block.prototype.drawSquare = function (color) {
+	var x = this.col * blockSize;
+	var y = this.row * blockSize;
+	ctx.fillStyle = color;
+	ctx.fillRect(x, y, blockSize, blockSize); // draw the snake
+};
+
+/* drawCircle function/method that will be part of the Block
+	constructor to draw the apples */
+	
+Block.prototype.drawCircle = function (color) {
+	var centerX = this.col * blockSize + blockSize / 2;
+	var centerY = this.row * blockSize + blockSize / 2;
+	ctx.fillStyle = color;
+	circle(centerX, centerY, blockSize / 2, true);
+};
+
+/* create a function that checks if one object is on top of another object
+	eg. the head of the snake hits the apple or the head of the snake
+	hits itself.
+
+	The function will return true if there is a collision
+	
+*/
+
+Block.prototype.equal = function (otherBlock) {
+	return this.col === otherBlock.col && this.row === otherBlock.row;
+};
+
+// create the snake
+
+var Snake = function () {
+	this.segments = [
+		new Block(7, 5),   // start the game with a three segment long snake
+		new Block(6, 5),
+		new Block(5, 5)	
+		];
+	this.direction = "right";  // snake will travel to the right at start of game
+	this.nextDirection = "right";
+};
+
+// draw the snake
+
+Snake.prototype.draw = function () {
+	for (var i = 0; i < this.segments.length; i++) {
+		this.segments[i].drawSquare(snake_Color);
+		}
+};
+
+// moving the snake
+
+Snake.prototype.move = function () {
+	var head = this.segments[0]; // set the head as the beginning segment
+	var newHead;
+	
+	this.direction = this.nextDirection;
+
+	// draw the snake head depending on the direction travelling
+	
+	if (this.direction === "right") {
+		newHead = new Block(head.col + 1, head.row);
+		} else if (this.direction === "left") {
+		newHead = new Block(head.col - 1, head.row);
+		} else if (this.direction === "up") {
+		newHead = new Block(head.col, head.row - 1);
+		} else if (this.direction === "down") {
+		newHead = new Block(head.col, head.row + 1);
+		}
+		
+	// check collision with itself or wall
+		
+	if (this.checkCollision(newHead)) {
+		gameOver();
+		return;
+	}	
+		
+		this.segments.unshift(newHead); // add the newHead to the beginning of the segments array and extend the snake
+		
+	if (newHead.equal(apple.position)) {
+		score++;
+		if (score === 1 || score === 4) {
+			snake_Color = "Green";
+			
+		}
+		if (score === 2 || score === 5) {
+			snake_Color = "Yellow";
+		}
+		if (score === 3 || score === 6) {
+			snake_Color = "Purple";
+		}
+		if (score === 7) {
+			snake_Color = "#008080";
+			animation_time = 80;
+		}
+		if (score === 8) {
+			snake_Color = "#333300";
+			animation_time = 70;
+		}
+		if (score === 10) {
+			snake_Color = "Black";
+			animation_time = 50;
+		}
+		apple.move();
+	} else {
+		this.segments.pop(); 
+	}
+		/* if the snake has eaten an apple we increase the score by 1
+			we then move the apple.
+			The snake is always extending so eating an apple only gives
+			the appearence of increasing the snake size 
+			so if we haven't eaten the apple
+			then we pop the last element of the array keeping the snake to the same size. */
+};
+
+
+// check for collisions method
+
+Snake.prototype.checkCollision = function (head) {
+	var leftCollision = (head.col === 0);
+	var topCollision = (head.row === 0);
+	var rightCollision = (head.col === widthInBlocks - 1);
+	var bottomCollision = (head.row === heightInBlocks - 1);
+	
+	var wallCollision = leftCollision || topCollision || rightCollision || bottomCollision;
+	
+	var selfCollision = false;
+	for (var i = 0; i < this.segments.length; i++) {
+		if (head.equal(this.segments[i])) {
+			selfCollision = true;
+		}
+	}	
+	
+	return wallCollision || selfCollision;
+
+};
+
+
+
+// controlling the snake
+
+var directions = {
+	37: "left",
+	38: "up",
+	39: "right",
+	40: "down"
+	
+};
+
+$("body").keydown(function (event) {
+    if (event.keyCode === 32 && !gameRunning) { // Space key
+        // Reset the game
+        gameRunning = true;
+        score = 0;
+        animation_time = 100;
+        snake_Color = "#ff0000";
+        snake = new Snake();
+        apple = new Apple();
+        return;
+    }
+    
+    // Handle normal direction changes only if game is running
+    var newDirection = directions[event.keyCode];
+    if (newDirection !== undefined && gameRunning) {
+        snake.setDirection(newDirection);
+    }
+});
+
+// setting the direction of the snake
+
+Snake.prototype.setDirection = function (newDirection) {
+	if (this.direction === "up" && newDirection === "down") {
+		return; // stops you from going down if going up (you must go left or right before you can go down or up)
+} else if (this.direction === "right" && newDirection === "left") {
+		return; // same applies going right
+		} else if (this.direction === "down" && newDirection === "up") {
+			return; // same applies going down
+		} else if (this.direction === "left" && newDirection === "right") {
+			return; // same applies going left
+		}
+	this.nextDirection = newDirection;	
+};
+
+
+// creating the apple constructor
+
+var Apple = function () {
+	this.position = new Block(10,10); // start off at position 10,10
+};
+
+// drawing the apple
+
+Apple.prototype.draw = function () {
+	this.position.drawCircle("LimeGreen");
+};
+
+// moving the apple 
+
+Apple.prototype.move = function () {
+	var randomCol = Math.floor(Math.random() * (widthInBlocks - 2)) + 1;
+	var randomRow = Math.floor(Math.random() * (heightInBlocks - 2)) +1;
+	this.position = new Block(randomCol, randomRow);
+};
+
+// Create the snake and apple objects
+  var snake = new Snake();
+  var apple = new Apple();
+  var animation_time = 100;
+
+
+  var gameLoop = function () {
+    
+    
+    if (gameRunning) {
+		ctx.clearRect(0, 0, width, height);
+    	drawScore();
+        drawHighScore();
+		snake.move();
+        snake.draw();
+        apple.draw();
+        drawBorder();
+        
+    }
+	setTimeout(gameLoop, animation_time);
+};
+
+gameLoop();
+
+
+</script>
+</body>
+</html>
