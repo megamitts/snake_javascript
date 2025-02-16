@@ -7,6 +7,7 @@
 <body>
 
 
+
 <canvas id="canvas" width="400" height="400"></canvas>
 
 <script src="https://code.jquery.com/jquery-3.7.1.js"></script> <!-- include latest version of jquery -->
@@ -73,7 +74,7 @@ var gameOver = function () {
 	if (score > highscore) {
 		highscore = score;
 	}
-
+// reset the game
 	drawScore();
     snake.draw();
     apple.draw();
@@ -193,6 +194,7 @@ Snake.prototype.move = function () {
 		
 	if (newHead.equal(apple.position)) {
 		score++;
+        apple.move();
 		if (score === 1 || score === 4) {
 			snake_Color = "Green";
 			
@@ -212,10 +214,28 @@ Snake.prototype.move = function () {
 			animation_time = 70;
 		}
 		if (score === 10) {
-			snake_Color = "Black";
+			snake_Color = "#ffcc00";
 			animation_time = 50;
 		}
-		apple.move();
+		if (score === 12) {
+			snake_Color = "#3366ff";
+			animation_time = 45;
+		}
+		if (score === 14) {
+			snake_Color = "#ffcc66";
+			animation_time = 40;
+		}
+		if (score === 16) {
+			snake_Color = "#339966";
+			animation_time = 35;
+		}
+		if (score === 18) {
+			snake_Color = "Black";
+			animation_time = 30;
+		}
+
+
+
 	} else {
 		this.segments.pop(); 
 	}
@@ -311,9 +331,29 @@ Apple.prototype.draw = function () {
 // moving the apple 
 
 Apple.prototype.move = function () {
-	var randomCol = Math.floor(Math.random() * (widthInBlocks - 2)) + 1;
-	var randomRow = Math.floor(Math.random() * (heightInBlocks - 2)) +1;
-	this.position = new Block(randomCol, randomRow);
+    // Generate a random position
+    var randomCol = Math.floor(Math.random() * (widthInBlocks - 2)) + 1;
+    var randomRow = Math.floor(Math.random() * (heightInBlocks - 2)) + 1;
+    var newPosition = new Block(randomCol, randomRow);
+    
+    // Check if the new position is on any part of the snake
+    while (snake.checkApplePosition(newPosition)) {
+        randomCol = Math.floor(Math.random() * (widthInBlocks - 2)) + 1;
+        randomRow = Math.floor(Math.random() * (heightInBlocks - 2)) + 1;
+        newPosition = new Block(randomCol, randomRow);
+    }
+    
+    this.position = newPosition;
+};
+
+// check to see if any part of the snake is on the apple
+Snake.prototype.checkApplePosition = function (pos) {
+    for (var i = 0; i < this.segments.length; i++) {
+        if (pos.equal(this.segments[i])) {
+            return true;  // apple is on the snake
+        }
+    }
+    return false;  // apple is not on the snake
 };
 
 // Create the snake and apple objects
